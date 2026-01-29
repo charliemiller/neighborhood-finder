@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Where Am I?</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            background: #1c1c1e;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(180deg, #1c1c1e 0%, #2c2c2e 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: flex-end;
+            padding: 20px 0;
+        }
+
+        .settings-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .location-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+        }
+
+        .location-dot {
+            width: 10px;
+            height: 10px;
+            background: #007AFF;
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            box-shadow: 0 0 20px rgba(0, 122, 255, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 0.7;
+                transform: scale(1.3);
+            }
+        }
+
+        .neighborhood {
+            font-size: 52px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .street {
+            font-size: 20px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+        }
+
+        .city {
+            font-size: 18px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 350px;
+            margin-top: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 15px;
+        }
+
+        .info-value {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .loading {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 17px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .error {
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .error-icon {
+            font-size: 50px;
+            margin-bottom: 20px;
+        }
+
+        .error-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 12px;
+        }
+
+        .error-msg {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .retry-btn {
+            background: #007AFF;
+            color: #ffffff;
+            border: none;
+            padding: 14px 28px;
+            font-size: 17px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .retry-btn:active {
+            opacity: 0.8;
+        }
+
+        .hint {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .arrow {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @media (max-width: 375px) {
+            .neighborhood {
+                font-size: 44px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="settings-btn" onclick="showSettings()">⚙</div>
+        </div>
+
+        <div class="content" id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">Finding your location...</div>
+            </div>
+        </div>
+
+        <div class="hint">
+            <span class="arrow">↓</span>
+            <span>Pull to refresh</span>
+        </div>
+    </div>
+
+    <script>
+        let watchId = null;
+        let lastUpdate = null;
+        let lastPosition = null;
+        let lastApiCall = 0;
+        const MIN_TIME_BETWEEN_UPDATES = 30000; // 30 seconds
+        const MIN_DISTANCE_METERS = 50; // 50 meters
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            // Haversine formula to calculate distance between two GPS points
+            const R = 6371e3; // Earth radius in meters
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c; // Distance in meters
+        }
+
+        function shouldUpdate(pos) {
+            const now = Date.now();
+            
+            // First update always happens
+            if (!lastPosition) return true;
+            
+            // Check time threshold
+            if (now - lastApiCall < MIN_TIME_BETWEEN_UPDATES) {
+                return false;
+            }
+            
+            // Check distance threshold
+            const distance = getDistance(
+                lastPosition.coords.latitude,
+                lastPosition.coords.longitude,
+                pos.coords.latitude,
+                pos.coords.longitude
+            );
+            
+            return distance >= MIN_DISTANCE_METERS;
+        }
+
+        async function getLocation(lat, lon) {
+            const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=16&addressdetails=1`,
+                { headers: { 'User-Agent': 'NeighborhoodFinder/2.0' }}
+            );
+            return await res.json();
+        }
+
+        function show(data, pos) {
+            const addr = data.address || {};
+            
+            const neighborhood = addr.neighbourhood || addr.suburb || addr.quarter || 
+                               addr.district || addr.city_district || addr.village || 
+                               addr.town || addr.city || 'Unknown Area';
+            
+            const street = addr.road || addr.street || '';
+            const city = addr.city || addr.town || addr.village || '';
+            const state = addr.state || '';
+            const accuracy = Math.round(pos.coords.accuracy);
+            
+            lastUpdate = new Date();
+
+            document.getElementById('content').innerHTML = `
+                <div class="location-label">You're in</div>
+                <div class="location-dot"></div>
+                <div class="neighborhood">${neighborhood}</div>
+                ${street ? `<div class="street">${street}</div>` : ''}
+                ${city ? `<div class="city">${city}${state ? ', ' + state : ''}</div>` : ''}
+                
+                <div class="info-card">
+                    <div class="info-row">
+                        <span class="info-label">Accuracy</span>
+                        <span class="info-value">±${accuracy}m</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Updated</span>
+                        <span class="info-value" id="timestamp">Just now</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showError(msg) {
+            document.getElementById('content').innerHTML = `
+                <div class="error">
+                    <div class="error-icon">📍</div>
+                    <div class="error-title">Location Unavailable</div>
+                    <div class="error-msg">${msg}</div>
+                    <button class="retry-btn" onclick="start()">Try Again</button>
+                </div>
+            `;
+        }
+
+        function showLoading() {
+            document.getElementById('content').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Finding your location...</div>
+                </div>
+            `;
+        }
+
+        async function update(pos) {
+            // Check if we should update based on distance and time
+            if (!shouldUpdate(pos)) {
+                // Just update the GPS accuracy display if already showing data
+                const accuracyEl = document.querySelector('.info-value');
+                if (accuracyEl) {
+                    accuracyEl.textContent = `±${Math.round(pos.coords.accuracy)}m`;
+                }
+                return;
+            }
+
+            try {
+                lastApiCall = Date.now();
+                lastPosition = pos;
+                
+                const data = await getLocation(pos.coords.latitude, pos.coords.longitude);
+                show(data, pos);
+            } catch (e) {
+                console.error('Location API error:', e);
+                // Only show error if we don't have any data yet
+                if (!lastUpdate) {
+                    showError('Unable to determine your neighborhood. Please try again.');
+                }
+            }
+        }
+
+        function error(err) {
+            let msg = '';
+            if (err.code === 1) msg = 'Please enable location access in your browser settings.';
+            else if (err.code === 2) msg = 'Location information is unavailable.';
+            else if (err.code === 3) msg = 'Location request timed out.';
+            else msg = 'An error occurred while getting your location.';
+            
+            showError(msg);
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+        }
+
+        function start() {
+            showLoading();
+            
+            if (!navigator.geolocation) {
+                showError('Geolocation is not supported by your browser.');
+                return;
+            }
+
+            watchId = navigator.geolocation.watchPosition(update, error, {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            });
+        }
+
+        function showSettings() {
+            alert('Settings\n\nFeatures coming soon:\n- Auto-refresh settings\n- Update frequency\n- Privacy options');
+        }
+
+        // Update timestamp
+        setInterval(() => {
+            if (!lastUpdate) return;
+            const el = document.getElementById('timestamp');
+            if (!el) return;
+            
+            const sec = Math.floor((new Date() - lastUpdate) / 1000);
+            if (sec < 10) el.textContent = 'Just now';
+            else if (sec < 60) el.textContent = `${sec}s ago`;
+            else if (sec < 3600) el.textContent = `${Math.floor(sec/60)}m ago`;
+            else el.textContent = `${Math.floor(sec/3600)}h ago`;
+        }, 1000);
+
+        // Pull to refresh
+        let startY = 0;
+        document.addEventListener('touchstart', e => startY = e.touches[0].clientY);
+        document.addEventListener('touchend', e => {
+            if (e.changedTouches[0].clientY - startY > 100 && window.scrollY === 0) {
+                if (watchId) navigator.geolocation.clearWatch(watchId);
+                start();
+            }
+        });
+
+        start();
+    </script>
+</body>
+</html>
